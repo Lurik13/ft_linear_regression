@@ -1,9 +1,11 @@
+import matplotlib
+matplotlib.use('Agg')
+
 import matplotlib.pyplot as plt
 import numpy as np
 
-font = {'family':'aurebesh','color':'darkred','size':20}
 
-plt.title("Sith statistics", fontdict = font)
+plt.title("ft_linear_regression")
 plt.xlabel("Strength")
 plt.ylabel("Power")
 
@@ -24,4 +26,4 @@ plt.scatter(x, y)
 
 plt.colorbar()
 
-plt.show()
+plt.savefig("ft_linear_regression.png")
