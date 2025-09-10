@@ -2,6 +2,8 @@
 # matplotlib.use('Agg') # Anti-Grain Geometry
 
 import sys
+from prompt_toolkit import prompt
+from input import AccentInsensitiveCompleter, normalize
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import stats
@@ -30,22 +32,31 @@ def parseData(fileName):
             raise Exception("Not enough data.")
     return xValues, yValues
 
+def displayFigure(x, y):
+    responses = ['Yes', 'No']
+    completer = AccentInsensitiveCompleter(responses)
+    new_prompt = prompt('Would you like to see the real data? ([Yes], No)\n', completer=completer, complete_while_typing=True)
+    if (not normalize(new_prompt) in 'yes'):
+        x_max, y_max = max(x), max(y)
+        x = [val / x_max for val in x]
+        y = [val / y_max for val in y]
+    plt.scatter(x, y)
+    plt.show()
+
 if __name__ == "__main__":
     try:
         if len(sys.argv) != 2:
             raise Exception("Please fill in a data file.")
-        values = parseData(sys.argv[1])
-        x = values[0]
-        y = values[1]
-        print(stats.linregress(x, y))
-        slope, intercept, r, p, std_err = stats.linregress(x, y)
-        def myfunc(x):
-            return slope * x + intercept
-        mymodel = list(map(myfunc, x))
-        plt.scatter(x, y)
-        plt.plot(x, mymodel)
-        # plt.savefig(CHART_IMAGE_NAME)
-        plt.show()
-        print("You can check \033[4m" + CHART_IMAGE_NAME + "\033[0m.")
+        x, y = parseData(sys.argv[1])
+        displayFigure(x, y)
+
+        # slope, intercept, r, p, std_err = stats.linregress(x_normalized, y_normalized)
+        # def myfunc(x):
+        #     return slope * x + intercept
+        # mymodel = list(map(myfunc, x_normalized))
+        # # plt.xlim(0, 1)
+        # # plt.ylim(0, 1)
+        # plt.plot(x_normalized, mymodel)
+        # # plt.savefig(CHART_IMAGE_NAME)
     except Exception as e:
         print("\033[38;2;170;0;0;1;4m" + str(e) + "\033[0m")
