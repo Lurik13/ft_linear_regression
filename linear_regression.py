@@ -18,7 +18,7 @@ def parseData(fileName):
     with open(fileName) as f:
         plt.title((fileName[:-4]))
         for line in f:
-            values = line[:-1].split(",")
+            values = line[:-1].split(",") # removes '\n' before splitting
             if len(values) != 2:
                 raise Exception("Wrong data format.")
             if linesNumber == 0:
@@ -50,13 +50,5 @@ if __name__ == "__main__":
         x, y = parseData(sys.argv[1])
         displayFigure(x, y)
 
-        # slope, intercept, r, p, std_err = stats.linregress(x_normalized, y_normalized)
-        # def myfunc(x):
-        #     return slope * x + intercept
-        # mymodel = list(map(myfunc, x_normalized))
-        # # plt.xlim(0, 1)
-        # # plt.ylim(0, 1)
-        # plt.plot(x_normalized, mymodel)
-        # # plt.savefig(CHART_IMAGE_NAME)
     except Exception as e:
         print("\033[38;2;170;0;0;1;4m" + str(e) + "\033[0m")
