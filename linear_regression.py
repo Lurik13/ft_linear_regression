@@ -6,8 +6,9 @@ import time
 from prompt_toolkit import prompt
 from input import AccentInsensitiveCompleter, normalize
 import matplotlib.pyplot as plt
+import numpy as np
 
-CHART_IMAGE_NAME = "ft_linear_regression.png"
+OUTFILE_NAME = "params.csv"
 
 
 def parseData(fileName):
@@ -59,37 +60,12 @@ def displayFigure(x, y):
 def estimatePrice(theta0, theta1, mileage):
     return theta0 + (theta1 * mileage)
 
-def init_plot(X, y):
-    # plt.ion() # Enable interactive mode for real-time updates
-    
-    # _, ax = plt.subplots()
-
-    # ax.scatter(X, y, color='OliveDrab', label='Data')
-    regression_line, = plt.plot([], [], color='LightCoral', label='Regression Line') # Empty line to be updated later
-
-    plt.xlabel('Mileage (normalized)')
-    plt.ylabel('Price (normalized)')
-    plt.legend()
-    return regression_line
-
-
-def update_plot(line, x, theta0, theta1):
-    x_min, x_max = min(x), max(x)
-    y_min = estimatePrice(x_min, theta0, theta1)
-    y_max = estimatePrice(x_max, theta0, theta1)
-
-    line.set_data([x_min, x_max], [y_min, y_max])
-    plt.draw()
-    plt.pause(0.01)
-    time.sleep(0.1)
-
 
 def ft_linear_regression(x, y):
     theta0 = 0
     theta1 = 0
     iterations = 300
     learningRate = 0.01
-    line = init_plot(x, y)
     m = len(x)
     for iteration in range(iterations):
         sum_error_theta0 = 0
@@ -101,16 +77,25 @@ def ft_linear_regression(x, y):
             sum_error_theta0 += error
             sum_error_theta1 += error * x[i]
         print(f'\033[38;2;170;0;0m{sum_error_theta0}, {sum_error_theta1}\033[0m')
-        theta0 -= learningRate / m * sum_error_theta0 
+        theta0 -= learningRate / m * sum_error_theta0
         theta1 -= learningRate / m * sum_error_theta1
         print(f"Iteration {iteration}; Theta0 {theta0:.6f}; Theta1 {theta1:.6f}")
-    update_plot(line, x, theta0, theta1)
     return theta0, theta1
 
 
 def saveParams(theta0, theta1):
-    with open("params.txt", 'w') as outfile:
+    with open(OUTFILE_NAME, 'w') as outfile:
         outfile.write(f"{theta0}, {theta1}")
+
+
+def standardization(x):
+    mean = np.mean(x)
+    standard_deviation = np.std(x)
+    print(f"\033[38;2;50;100;200mMoyenne: {mean}; Ecart-type: {standard_deviation}")
+    x_scaled = []
+    for i in range(len(x)):
+        x_scaled.append((x[i] - mean) / standard_deviation)
+    return x_scaled
 
 
 if __name__ == "__main__":
@@ -119,9 +104,10 @@ if __name__ == "__main__":
             raise Exception("Please fill in a data file.")
         x, y = parseData(sys.argv[1])
         displayFigure(x, y)
-        normalizedX, normalizedY = normalizeValues(x, y)
-        theta0, theta1 = ft_linear_regression(normalizedX, normalizedY)
+        # normalizedX, normalizedY = normalizeValues(x, y)
+        theta0, theta1 = ft_linear_regression(x, y)
         saveParams(theta0, theta1)
+        x_scaled = standardization(x)
 
     except Exception as e:
         print("\033[38;2;170;0;0;1;4m" + str(e) + "\033[0m")
