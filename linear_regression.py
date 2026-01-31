@@ -2,11 +2,10 @@
 # matplotlib.use('Agg') # Anti-Grain Geometry
 
 import sys
+import time
 from prompt_toolkit import prompt
 from input import AccentInsensitiveCompleter, normalize
 import matplotlib.pyplot as plt
-import numpy as np
-from scipy import stats
 
 CHART_IMAGE_NAME = "ft_linear_regression.png"
 
@@ -18,7 +17,7 @@ def parseData(fileName):
     with open(fileName) as f:
         plt.title((fileName[:-4]))
         for line in f:
-            values = line[:-1].split(",") # removes '\n' before splitting
+            values = line[:-1].split(",")  # removes '\n' before splitting
             if len(values) != 2:
                 raise Exception("Wrong data format.")
             if linesNumber == 0:
@@ -32,16 +31,87 @@ def parseData(fileName):
             raise Exception("Not enough data.")
     return xValues, yValues
 
+
+def normalizeValues(x, y):
+    x_max, y_max = max(x), max(y)
+    x = [val / x_max for val in x]
+    y = [val / y_max for val in y]
+    return x, y
+
 def displayFigure(x, y):
     responses = ['Yes', 'No']
     completer = AccentInsensitiveCompleter(responses)
-    new_prompt = prompt('Would you like to see the real data? ([Yes], No)\n', completer=completer, complete_while_typing=True)
-    if (not normalize(new_prompt) in 'yes'):
-        x_max, y_max = max(x), max(y)
-        x = [val / x_max for val in x]
-        y = [val / y_max for val in y]
+    new_prompt = prompt(
+        'Would you like to see the real data? ([Yes], No)\n',  # a revoir
+        completer=completer, complete_while_typing=True
+    )
+    if (not normalize(new_prompt) in 'Yes'):
+        x, y = normalizeValues(x, y)
     plt.scatter(x, y)
+    regression_line, = plt.plot([], [], color='LightCoral', label='Regression Line')
+    x_min, x_max = min(x), max(x)
+    y_min = estimatePrice(x_min, 0.657577, 0.170032)
+    y_max = estimatePrice(x_max, 0.657577, 0.170032)
+    regression_line.set_data([x_min, x_max], [y_min, y_max])
     plt.show()
+
+
+def estimatePrice(theta0, theta1, mileage):
+    return theta0 + (theta1 * mileage)
+
+def init_plot(X, y):
+    # plt.ion() # Enable interactive mode for real-time updates
+    
+    # _, ax = plt.subplots()
+
+    # ax.scatter(X, y, color='OliveDrab', label='Data')
+    regression_line, = plt.plot([], [], color='LightCoral', label='Regression Line') # Empty line to be updated later
+
+    plt.xlabel('Mileage (normalized)')
+    plt.ylabel('Price (normalized)')
+    plt.legend()
+    return regression_line
+
+
+def update_plot(line, x, theta0, theta1):
+    x_min, x_max = min(x), max(x)
+    y_min = estimatePrice(x_min, theta0, theta1)
+    y_max = estimatePrice(x_max, theta0, theta1)
+
+    line.set_data([x_min, x_max], [y_min, y_max])
+    plt.draw()
+    plt.pause(0.01)
+    time.sleep(0.1)
+
+
+def ft_linear_regression(x, y):
+    theta0 = 0
+    theta1 = 0
+    iterations = 300
+    learningRate = 0.01
+    line = init_plot(x, y)
+    m = len(x)
+    for iteration in range(iterations):
+        sum_error_theta0 = 0
+        sum_error_theta1 = 0
+        for i in range(m):
+            predictedPrice = estimatePrice(theta0, theta1, x[i])
+            error = predictedPrice - y[i]
+            # print("\033[38;2;0;170;0m", error, predictedPrice)
+            sum_error_theta0 += error
+            sum_error_theta1 += error * x[i]
+        print(f'\033[38;2;170;0;0m{sum_error_theta0}, {sum_error_theta1}\033[0m')
+        theta0 -= learningRate / m * sum_error_theta0 
+        theta1 -= learningRate / m * sum_error_theta1
+        print(f"Iteration {iteration}; Theta0 {theta0:.6f}; Theta1 {theta1:.6f}")
+    update_plot(line, x, theta0, theta1)
+    return theta0, theta1
+
+
+def saveParams(theta0, theta1):
+    with open("params.txt", 'w') as outfile:
+        outfile.write(f"{theta0}, {theta1}")
+
 
 if __name__ == "__main__":
     try:
@@ -49,6 +119,9 @@ if __name__ == "__main__":
             raise Exception("Please fill in a data file.")
         x, y = parseData(sys.argv[1])
         displayFigure(x, y)
+        normalizedX, normalizedY = normalizeValues(x, y)
+        theta0, theta1 = ft_linear_regression(normalizedX, normalizedY)
+        saveParams(theta0, theta1)
 
     except Exception as e:
         print("\033[38;2;170;0;0;1;4m" + str(e) + "\033[0m")
