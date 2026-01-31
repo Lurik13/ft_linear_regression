@@ -88,14 +88,16 @@ def saveParams(theta0, theta1):
         outfile.write(f"{theta0}, {theta1}")
 
 
-def standardization(x):
-    mean = np.mean(x)
-    standard_deviation = np.std(x)
-    print(f"\033[38;2;50;100;200mMoyenne: {mean}; Ecart-type: {standard_deviation}")
-    x_scaled = []
-    for i in range(len(x)):
-        x_scaled.append((x[i] - mean) / standard_deviation)
-    return x_scaled
+def normalize(feature):
+    mean = np.mean(feature)
+    std = np.std(feature)
+    return [(v - mean) / std for v in feature], mean, std
+
+
+def denormalize(theta0, theta1, x_mean, x_std, y_mean, y_std):
+    slope = theta1 * (y_std / x_std)
+    intercept = y_std * theta0 + y_mean - slope * x_mean
+    return intercept, slope
 
 
 if __name__ == "__main__":
@@ -103,11 +105,13 @@ if __name__ == "__main__":
         if len(sys.argv) != 2:
             raise Exception("Please fill in a data file.")
         x, y = parseData(sys.argv[1])
-        displayFigure(x, y)
+        # displayFigure(x, y)
         # normalizedX, normalizedY = normalizeValues(x, y)
+        x, x_mean, x_std = normalize(x)
+        y, y_mean, y_std = normalize(y)
         theta0, theta1 = ft_linear_regression(x, y)
+        theta0, theta1 = denormalize(theta0, theta1, x_mean, x_std, y_mean, y_std)
         saveParams(theta0, theta1)
-        x_scaled = standardization(x)
 
     except Exception as e:
         print("\033[38;2;170;0;0;1;4m" + str(e) + "\033[0m")
