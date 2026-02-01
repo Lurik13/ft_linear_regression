@@ -39,6 +39,7 @@ def normalizeValues(x, y):
     y = [val / y_max for val in y]
     return x, y
 
+
 def displayFigure(x, y):
     responses = ['Yes', 'No']
     completer = AccentInsensitiveCompleter(responses)
@@ -49,7 +50,11 @@ def displayFigure(x, y):
     if (not normalize(new_prompt) in 'Yes'):
         x, y = normalizeValues(x, y)
     plt.scatter(x, y)
-    regression_line, = plt.plot([], [], color='LightCoral', label='Regression Line')
+    regression_line, = plt.plot(
+        [], [],
+        color='LightCoral',
+        label='Regression Line'
+    )
     x_min, x_max = min(x), max(x)
     y_min = estimatePrice(x_min, 0.657577, 0.170032)
     y_max = estimatePrice(x_max, 0.657577, 0.170032)
@@ -88,13 +93,13 @@ def saveParams(theta0, theta1):
         outfile.write(f"{theta0}, {theta1}")
 
 
-def normalize(feature):
+def standardize(feature):
     mean = np.mean(feature)
     std = np.std(feature)
     return [(v - mean) / std for v in feature], mean, std
 
 
-def denormalize(theta0, theta1, x_mean, x_std, y_mean, y_std):
+def unstandardize(theta0, theta1, x_mean, x_std, y_mean, y_std):
     slope = theta1 * (y_std / x_std)
     intercept = y_std * theta0 + y_mean - slope * x_mean
     return intercept, slope
@@ -107,10 +112,10 @@ if __name__ == "__main__":
         x, y = parseData(sys.argv[1])
         # displayFigure(x, y)
         # normalizedX, normalizedY = normalizeValues(x, y)
-        x, x_mean, x_std = normalize(x)
-        y, y_mean, y_std = normalize(y)
+        x, x_mean, x_std = standardize(x)
+        y, y_mean, y_std = standardize(y)
         theta0, theta1 = ft_linear_regression(x, y)
-        theta0, theta1 = denormalize(theta0, theta1, x_mean, x_std, y_mean, y_std)
+        theta0, theta1 = unstandardize(theta0, theta1, x_mean, x_std, y_mean, y_std)
         saveParams(theta0, theta1)
 
     except Exception as e:
