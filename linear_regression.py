@@ -1,10 +1,5 @@
-# import matplotlib
-# matplotlib.use('Agg') # Anti-Grain Geometry
-
 import sys
 import time
-from prompt_toolkit import prompt
-from input import AccentInsensitiveCompleter, normalize
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -33,35 +28,6 @@ def parseData(fileName):
     return xValues, yValues
 
 
-def normalizeValues(x, y):
-    x_max, y_max = max(x), max(y)
-    x = [val / x_max for val in x]
-    y = [val / y_max for val in y]
-    return x, y
-
-
-def displayFigure(x, y):
-    responses = ['Yes', 'No']
-    completer = AccentInsensitiveCompleter(responses)
-    new_prompt = prompt(
-        'Would you like to see the real data? ([Yes], No)\n',  # a revoir
-        completer=completer, complete_while_typing=True
-    )
-    if (not normalize(new_prompt) in 'Yes'):
-        x, y = normalizeValues(x, y)
-    plt.scatter(x, y)
-    regression_line, = plt.plot(
-        [], [],
-        color='LightCoral',
-        label='Regression Line'
-    )
-    x_min, x_max = min(x), max(x)
-    y_min = estimatePrice(x_min, 0.657577, 0.170032)
-    y_max = estimatePrice(x_max, 0.657577, 0.170032)
-    regression_line.set_data([x_min, x_max], [y_min, y_max])
-    plt.show()
-
-
 def estimatePrice(theta0, theta1, mileage):
     return theta0 + (theta1 * mileage)
 
@@ -78,25 +44,18 @@ def ft_linear_regression(x, y):
         for i in range(m):
             predictedPrice = estimatePrice(theta0, theta1, x[i])
             error = predictedPrice - y[i]
-            # print("\033[38;2;0;170;0m", error, predictedPrice)
             sum_error_theta0 += error
             sum_error_theta1 += error * x[i]
-        print(f'\033[38;2;170;0;0m{sum_error_theta0}, {sum_error_theta1}\033[0m')
         theta0 -= learningRate / m * sum_error_theta0
         theta1 -= learningRate / m * sum_error_theta1
         print(f"Iteration {iteration}; Theta0 {theta0:.6f}; Theta1 {theta1:.6f}")
     return theta0, theta1
 
 
-def saveParams(theta0, theta1):
-    with open(OUTFILE_NAME, 'w') as outfile:
-        outfile.write(f"{theta0}, {theta1}")
-
-
-def standardize(feature):
-    mean = np.mean(feature)
-    std = np.std(feature)
-    return [(v - mean) / std for v in feature], mean, std
+def standardize(axis):
+    mean = np.mean(axis)
+    std = np.std(axis)
+    return [(v - mean) / std for v in axis], mean, std
 
 
 def unstandardize(theta0, theta1, x_mean, x_std, y_mean, y_std):
@@ -105,17 +64,33 @@ def unstandardize(theta0, theta1, x_mean, x_std, y_mean, y_std):
     return intercept, slope
 
 
+def displayFigure(x, y, intercept, slope):
+    plt.scatter(x, y)
+    plt.axline(
+        (0, intercept), 
+        slope=slope, 
+        color='LightCoral', 
+        label='Regression Line'
+    )
+    plt.show()
+
+
+def saveParams(theta0, theta1):
+    with open(OUTFILE_NAME, 'w') as outfile:
+        outfile.write(f"{theta0}, {theta1}")
+
+
 if __name__ == "__main__":
     try:
         if len(sys.argv) != 2:
             raise Exception("Please fill in a data file.")
         x, y = parseData(sys.argv[1])
-        # displayFigure(x, y)
-        # normalizedX, normalizedY = normalizeValues(x, y)
-        x, x_mean, x_std = standardize(x)
-        y, y_mean, y_std = standardize(y)
-        theta0, theta1 = ft_linear_regression(x, y)
-        theta0, theta1 = unstandardize(theta0, theta1, x_mean, x_std, y_mean, y_std)
+        x_s, x_mean, x_std = standardize(x)
+        y_s, y_mean, y_std = standardize(y)
+        theta0_s, theta1_s = ft_linear_regression(x_s, y_s)
+        theta0, theta1 = unstandardize(theta0_s, theta1_s, x_mean, x_std, y_mean, y_std)
+        print(f"\033[38;2;0;170;0mTheta0 {theta0:.6f}; Theta1 {theta1:.6f}\033[0m")
+        displayFigure(x, y, theta0, theta1)
         saveParams(theta0, theta1)
 
     except Exception as e:
