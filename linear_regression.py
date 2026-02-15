@@ -2,6 +2,7 @@ import sys
 import time
 import matplotlib.pyplot as plt
 import numpy as np
+from sklearn.metrics import mean_squared_error
 
 OUTFILE_NAME = "params.csv"
 
@@ -80,6 +81,22 @@ def saveParams(theta0, theta1):
         outfile.write(f"{theta0}, {theta1}")
 
 
+def meanSquaredError(x, y, theta0, theta1):
+    n = len(x)
+    mse = 0.0
+    y_pred = [] 
+    for i in range(n):
+        predictedPrice = estimatePrice(theta0, theta1, x[i])
+        y_pred.append(predictedPrice)
+
+        diff = y[i] - predictedPrice
+        mse += diff ** 2
+    result = mse / n
+    print(f"My MSE   {result}")
+    print(f"True MSE {mean_squared_error(y, y_pred)}")
+    return result
+
+
 if __name__ == "__main__":
     try:
         if len(sys.argv) != 2:
@@ -91,6 +108,7 @@ if __name__ == "__main__":
         theta0, theta1 = unstandardize(theta0_s, theta1_s, x_mean, x_std, y_mean, y_std)
         print(f"\033[38;2;0;170;0mTheta0 {theta0:.6f}; Theta1 {theta1:.6f}\033[0m")
         displayFigure(x, y, theta0, theta1)
+        meanSquaredError(x, y, theta0, theta1)
         saveParams(theta0, theta1)
 
     except Exception as e:
